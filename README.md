@@ -14,4 +14,7 @@ Creates the user model:
     jeanphix = User('jeanphix', 'serafinjp@gmail.com', 'mypassword')
     assert jeanphix.check_password('mypassword')
 
+### `permission_factory`
 
+Creates permission model.
+Permissions can be linked to both user and / or group.

@@ -3,31 +3,37 @@ import datetime
 from passlib.context import CryptContext
 from sqlalchemy import Table, Column, Integer, String, Boolean, DateTime,\
         ForeignKey, UniqueConstraint
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.sql.expression import or_
 
+from base import Model, Query
 
-class QueryManager(object):
-    """Base class for queries manager.
-    """
-    model = None
 
-    def __init__(self, session):
-        self.session = session
-
+class UserQuery(Query):
+    """Query class for users."""
     @property
-    def query(self):
-        return self.session.query(self.model)
+    def base(self):
+        base = self
+        if hasattr(self.model, 'permissions'):
+            base = base.options(joinedload('permissions'))
+        return base
+
+    def by_username_or_email_address(self, value):
+        """Retrieves a user by `username` or `email`.
+        """
+        return self.base.filter(or_(self.model.username==value,
+            self.model.email_address==value)).first()
 
 
-def user_factory(base, table_name='user', crypt_schemes = ['bcrypt']):
+def user_factory(base, table_name='user', crypt_schemes = ['bcrypt'],
+        query_class=UserQuery):
     """Creates a class that represents local users.
 
     :param base: The SQLAlchemy declarative base.
     :param table_name: The name of table where to store users.
     :param crypt_schemes: The passlib crypt schemes.
     """
-    class User(base):
+    class User(base, Model):
         __tablename__ = table_name
 
         id = Column(Integer, primary_key=True)
@@ -63,15 +69,7 @@ def user_factory(base, table_name='user', crypt_schemes = ['bcrypt']):
             self.password = self.crypt_context.encrypt(password)
 
 
-    class UserManager(QueryManager):
-        model = User
-
-        def by_username_or_email_address(self, value):
-            return self.query.filter(or_(self.model.username==value,
-                self.model.email_address==value)).first()
-
-
-    User.manager = UserManager
+    User.set_query_class(query_class)
 
 
     return User
@@ -107,14 +105,12 @@ def permission_factory(base, table_name='permission', user_class=None,
         def __unicode__(self):
             return unicode(self.name)
 
-        @classmethod
-        def by_name(cls, name):
-            return cls.query(session).filter(cls.name==name).first()
 
     if user_class is not None:
         #  Adds `permissions_list` property to the user class
         def permissions_list(self):
             return [unicode(permission) for permission in self.permissions]
+
         user_class.permissions_list = property(permissions_list)
 
         #  Creates the associative table between user an permission
@@ -125,6 +121,7 @@ def permission_factory(base, table_name='permission', user_class=None,
 
         UniqueConstraint(user_permission.c.user_id, user_permission.c.permission_id)
 
+
     if group_class is not None:
         #  Creates the associative class between group and permission
         group_permission = Table('group_permission', base.metadata,
@@ -133,6 +130,7 @@ def permission_factory(base, table_name='permission', user_class=None,
         )
 
         UniqueConstraint(group_permission.c.permission_id, group_permission.c.group_id)
+
 
     return Permission
 

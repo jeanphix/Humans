@@ -9,7 +9,7 @@ from humans.auth import user_factory, permission_factory, group_factory
 from sqlalchemy.ext.declarative import declarative_base
 
 
-engine = create_engine('sqlite:////tmp/test.db', echo=False)
+engine = create_engine('sqlite:////tmp/test.db', echo=True)
 Session = sessionmaker(engine)
 
 
@@ -40,12 +40,12 @@ class UserFactoryTest(BaseTestCase):
         self.session.add(admin)
 
     def test_by_username_or_email_address_from_email_address(self):
-        admin = self.User.manager(self.session)\
+        admin = self.User.query(self.session)\
                 .by_username_or_email_address('admin@domain.tld')
         self.assertEqual(admin.username, 'admin')
 
     def test_by_username_or_email_address_from_username(self):
-        jeanphix = self.User.manager(self.session)\
+        jeanphix = self.User.query(self.session)\
                 .by_username_or_email_address('jeanphix')
         self.assertEqual(jeanphix.email_address, 'serafinjp@gmail.com')
 
@@ -87,7 +87,7 @@ class PermissionFactoryWithUserTest(BaseTestCase):
         self.session.add(create_user)
 
     def test_user_permission_list(self):
-        admin = self.User.manager(self.session)\
+        admin = self.User.query(self.session)\
                 .by_username_or_email_address('admin')
         self.assertIn('create_user', admin.permissions_list)
 
