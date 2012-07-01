@@ -113,6 +113,12 @@ def permission_factory(base, table_name='permission', user_class=None,
 
         user_class.permissions_list = property(permissions_list)
 
+        # Adds `has_permission` method to the user class
+        def has_permission(self, permission):
+            return permission in self.permissions_list
+
+        user_class.has_permission = has_permission
+
         #  Creates the associative table between user an permission
         user_permission = Table(
             compute_join_table_name(user_class, Permission),

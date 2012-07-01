@@ -9,7 +9,7 @@ from humans.auth import user_factory, permission_factory, group_factory
 from sqlalchemy.ext.declarative import declarative_base
 
 
-engine = create_engine('sqlite:////tmp/test.db', echo=True)
+engine = create_engine('sqlite:////tmp/test.db', echo=False)
 Session = sessionmaker(engine)
 
 
@@ -70,7 +70,19 @@ class UserFactoryTest(BaseTestCase):
 
 
 class GroupFactoryTest(BaseTestCase):
-    pass
+    def models_setup(self):
+        self.User = user_factory(self.Base)
+        self.Group = group_factory(self.Base, self.User)
+
+    def add_fixtures(self):
+        jeanphix = self.User('jeanphix', 'serafinjp@gmail.com', 'password')
+        self.session.add(jeanphix)
+        admin = self.Group('admin')
+        admin.users.append(jeanphix)
+        self.session.add(admin)
+
+    def test_has_group_group_name(self):
+        pass
 
 
 class PermissionFactoryWithUserTest(BaseTestCase):
@@ -90,6 +102,16 @@ class PermissionFactoryWithUserTest(BaseTestCase):
         admin = self.User.query(self.session)\
                 .by_username_or_email_address('admin')
         self.assertIn('create_user', admin.permissions_list)
+
+    def test_user_has_permission_string(self):
+        admin = self.User.query(self.session)\
+                .by_username_or_email_address('admin')
+        self.assertTrue(admin.has_permission('create_user'))
+
+    def test_user_has_permission_string_false(self):
+        admin = self.User.query(self.session)\
+                .by_username_or_email_address('admin')
+        self.assertFalse(admin.has_permission('create_group'))
 
 
 class PermissionFactoryWithGroup(BaseTestCase):
