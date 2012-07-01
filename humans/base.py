@@ -2,6 +2,12 @@
 from sqlalchemy.orm import Query
 
 
+def compute_join_table_name(from_, to):
+    """Computes the many to many table name between two models.
+    """
+    return "%s_%s" % (from_.__tablename__, to.__tablename__)
+
+
 class Model(object):
     """Base class for models."""
     query_class = None

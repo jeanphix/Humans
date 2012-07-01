@@ -6,7 +6,7 @@ from sqlalchemy import Table, Column, Integer, String, Boolean, DateTime,\
 from sqlalchemy.orm import relationship, joinedload
 from sqlalchemy.sql.expression import or_
 
-from base import Model, Query
+from base import compute_join_table_name, Model, Query
 
 
 class UserQuery(Query):
@@ -114,7 +114,9 @@ def permission_factory(base, table_name='permission', user_class=None,
         user_class.permissions_list = property(permissions_list)
 
         #  Creates the associative table between user an permission
-        user_permission = Table('user_permission', base.metadata,
+        user_permission = Table(
+            compute_join_table_name(user_class, Permission),
+            base.metadata,
             Column('user_id', Integer, ForeignKey(user_class.id)),
             Column('permission_id', Integer, ForeignKey(Permission.id))
         )
@@ -124,7 +126,9 @@ def permission_factory(base, table_name='permission', user_class=None,
 
     if group_class is not None:
         #  Creates the associative class between group and permission
-        group_permission = Table('group_permission', base.metadata,
+        group_permission = Table(
+            compute_join_table_name(group_class, Permission),
+            base.metadata,
             Column('permission_id', Integer, ForeignKey(Permission.id)),
             Column('group_id', Integer, ForeignKey(group_class.id))
         )
@@ -162,7 +166,9 @@ def group_factory(base, user_class, table_name='group'):
             return cls.query(session).filter(cls.name==name).first()
 
 
-    user_group = Table('user_group', base.metadata,
+    user_group = Table(
+        compute_join_table_name(user_class, Group),
+        base.metadata,
         Column('user_id', Integer, ForeignKey(user_class.id)),
         Column('group_id', Integer, ForeignKey(Group.id))
     )
