@@ -1,6 +1,8 @@
 # Humans.py
 
-Add humans to yor SQLAlchemy based web apps.
+Add humans to your SQLAlchemy based web apps.
+
+![Build status](https://secure.travis-ci.org/jeanphix/Humans.png)
 
 ## auth
 
