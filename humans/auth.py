@@ -99,7 +99,7 @@ def permission_factory(base, table_name='permission', user_class=None,
                 secondary=lambda: group_permission,
                 backref='permissions')
 
-        def __init__(self, name):
+        def __init__(self, name=None):
             self.name = name
 
         def __unicode__(self):
@@ -109,6 +109,8 @@ def permission_factory(base, table_name='permission', user_class=None,
     if user_class is not None:
         #  Adds `permissions_list` property to the user class
         def permissions_list(self):
+            """Returns user permissions as a lis of names.
+            """
             return [unicode(permission) for permission in self.permissions]
 
         user_class.permissions_list = property(permissions_list)
@@ -174,6 +176,8 @@ def group_factory(base, user_class, table_name='group'):
 
     #  Adds `groups_list` property to user_class
     def groups_list(self):
+        """Returns user groups as a list of names.
+        """
         return [unicode(group) for group in self.groups]
 
     user_class.groups_list = property(groups_list)

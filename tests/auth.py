@@ -1,43 +1,32 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from fixture import DataSet
+from fixture.dataset import SuperSet
 
+from base import Base, Models, BaseTestCase
 from humans.auth import user_factory, permission_factory, group_factory
 
-from sqlalchemy.ext.declarative import declarative_base
 
 
-engine = create_engine('sqlite:////tmp/test.db', echo=False)
-Session = sessionmaker(engine)
+class UserData(DataSet):
+    class jeanphix:
+        username = 'jeanphix'
+        email_address = 'serafinjp@gmail.com'
+        password = 'mypassword'
 
-
-class BaseTestCase(unittest.TestCase):
-    def setUp(self):
-        self.Base = declarative_base()
-        self.session = Session()
-        if hasattr(self, 'models_setup'):
-            self.models_setup()
-        self.Base.metadata.create_all(engine)
-        if hasattr(self, 'add_fixtures'):
-            self.add_fixtures()
-        self.session.commit()
-
-    def tearDown(self):
-        self.Base.metadata.drop_all(engine)
-        self.Base.metadata.clear()
+    class admin:
+        username = 'admin'
+        email_address = 'admin@domain.tld'
+        password = 'password'
 
 
 class UserFactoryTest(BaseTestCase):
-    def models_setup(self):
-        self.User = user_factory(self.Base)
+    @classmethod
+    def setUpClass(cls):
+        cls.User = user_factory(Base)
 
-    def add_fixtures(self):
-        jeanphix = self.User('jeanphix', 'serafinjp@gmail.com', 'mypassword')
-        self.session.add(jeanphix)
-        admin = self.User('admin', 'admin@domain.tld', 'password')
-        self.session.add(admin)
+    datasets = [UserData]
 
     def test_by_username_or_email_address_from_email_address(self):
         admin = self.User.query(self.session)\
@@ -69,52 +58,51 @@ class UserFactoryTest(BaseTestCase):
         self.assertTrue(user.check_password('password'))
 
 
-class GroupFactoryTest(BaseTestCase):
-    def models_setup(self):
-        self.User = user_factory(self.Base)
-        self.Group = group_factory(self.Base, self.User)
+class GroupData(DataSet):
+    class admin:
+        name = 'admin'
+        users = [UserData.jeanphix]
 
-    def add_fixtures(self):
-        self.jeanphix = self.User('jeanphix', 'serafinjp@gmail.com', 'password')
-        self.session.add(self.jeanphix)
-        admin = self.Group('admin')
-        admin.users.append(self.jeanphix)
-        self.session.add(admin)
+
+class GroupFactoryTest(BaseTestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.User = user_factory(Base)
+        cls.Group = group_factory(Base, cls.User)
+
+    datasets = [UserData, GroupData]
 
     def test_has_group_name(self):
-        self.assertTrue(self.jeanphix.has_group('admin'))
+        self.assertTrue(self.data.UserData.jeanphix.has_group('admin'))
 
     def test_has_group_name_false(self):
-        self.assertFalse(self.jeanphix.has_group('user'))
+        self.assertFalse(self.data.UserData.jeanphix.has_group('user'))
+
+
+class PermissionData(DataSet):
+    class create_user:
+        name = 'create_user'
+        users = [UserData.admin]
 
 
 class PermissionFactoryWithUserTest(BaseTestCase):
-    def models_setup(self):
-        self.User = user_factory(self.Base)
-        self.Permission = permission_factory(self.Base,
-                user_class=self.User)
+    @classmethod
+    def setUpClass(cls):
+        cls.User = user_factory(Base)
+        cls.Permission = permission_factory(Base,
+                user_class=cls.User)
 
-    def add_fixtures(self):
-        admin = self.User('admin', 'admin@domain.tld', 'password')
-        self.session.add(admin)
-        create_user = self.Permission('create_user')
-        admin.permissions.append(create_user)
-        self.session.add(create_user)
+    datasets = [UserData, PermissionData]
 
     def test_user_permission_list(self):
-        admin = self.User.query(self.session)\
-                .by_username_or_email_address('admin')
-        self.assertIn('create_user', admin.permissions_list)
+        self.assertIn('create_user', self.data.UserData.admin.permissions_list)
 
     def test_user_has_permission_name(self):
-        admin = self.User.query(self.session)\
-                .by_username_or_email_address('admin')
-        self.assertTrue(admin.has_permission('create_user'))
+        self.assertTrue(self.data.UserData.admin.has_permission('create_user'))
 
     def test_user_has_permission_name_false(self):
-        admin = self.User.query(self.session)\
-                .by_username_or_email_address('admin')
-        self.assertFalse(admin.has_permission('create_group'))
+        self.assertFalse(self.data.UserData.admin\
+                .has_permission('create_group'))
 
 
 class PermissionFactoryWithGroup(BaseTestCase):
