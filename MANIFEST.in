@@ -1,0 +1,2 @@
+include README.md *.py
+recursive-include humans *

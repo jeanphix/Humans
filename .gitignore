@@ -1,3 +1,6 @@
 *.swp
 *.pyc
 env
+build*
+dist*
+Humans.egg-info*

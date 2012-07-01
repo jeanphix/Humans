@@ -80,6 +80,9 @@ class GroupFactoryTest(BaseTestCase):
 
 
 class PermissionData(DataSet):
+    class Meta:
+        storable_name = 'Permission'
+
     class create_user:
         name = 'create_user'
         users = [UserData.admin]
