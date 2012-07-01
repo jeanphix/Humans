@@ -172,6 +172,19 @@ def group_factory(base, user_class, table_name='group'):
             return cls.query(session).filter(cls.name==name).first()
 
 
+    #  Adds `groups_list` property to user_class
+    def groups_list(self):
+        return [unicode(group) for group in self.groups]
+
+    user_class.groups_list = property(groups_list)
+
+    #  Adds `has_group` method to the user_class
+    def has_group(self, group):
+        return group in self.groups_list
+
+    user_class.has_group = has_group
+
+    #  Creates the association table between user and group
     user_group = Table(
         compute_join_table_name(user_class, Group),
         base.metadata,

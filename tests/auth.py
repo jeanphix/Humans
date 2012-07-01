@@ -75,14 +75,17 @@ class GroupFactoryTest(BaseTestCase):
         self.Group = group_factory(self.Base, self.User)
 
     def add_fixtures(self):
-        jeanphix = self.User('jeanphix', 'serafinjp@gmail.com', 'password')
-        self.session.add(jeanphix)
+        self.jeanphix = self.User('jeanphix', 'serafinjp@gmail.com', 'password')
+        self.session.add(self.jeanphix)
         admin = self.Group('admin')
-        admin.users.append(jeanphix)
+        admin.users.append(self.jeanphix)
         self.session.add(admin)
 
-    def test_has_group_group_name(self):
-        pass
+    def test_has_group_name(self):
+        self.assertTrue(self.jeanphix.has_group('admin'))
+
+    def test_has_group_name_false(self):
+        self.assertFalse(self.jeanphix.has_group('user'))
 
 
 class PermissionFactoryWithUserTest(BaseTestCase):
@@ -103,12 +106,12 @@ class PermissionFactoryWithUserTest(BaseTestCase):
                 .by_username_or_email_address('admin')
         self.assertIn('create_user', admin.permissions_list)
 
-    def test_user_has_permission_string(self):
+    def test_user_has_permission_name(self):
         admin = self.User.query(self.session)\
                 .by_username_or_email_address('admin')
         self.assertTrue(admin.has_permission('create_user'))
 
-    def test_user_has_permission_string_false(self):
+    def test_user_has_permission_name_false(self):
         admin = self.User.query(self.session)\
                 .by_username_or_email_address('admin')
         self.assertFalse(admin.has_permission('create_group'))
