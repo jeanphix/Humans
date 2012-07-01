@@ -24,6 +24,7 @@ setup(
     platforms='any',
     install_requires=[
         'SQLAlchemy',
+        'passlib',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
