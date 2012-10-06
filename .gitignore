@@ -1,6 +1,6 @@
-*.swp
+*.sw*
 *.pyc
-env
 build*
 dist*
 Humans.egg-info*
+.env
