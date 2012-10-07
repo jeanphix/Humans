@@ -32,13 +32,13 @@ class UserFactoryTest(BaseTestCase):
         UserSet.__distillery__.__model__ = cls.User
 
     def test_by_username_or_email_address_from_email_address(self):
-        UserSet().admin  # Creates the admin
+        UserSet()
         admin = self.User.query(session)\
                 .by_username_or_email_address('admin@domain.tld')
         self.assertEqual(admin.username, 'admin')
 
     def test_by_username_or_email_address_from_username(self):
-        UserSet().jeanphix  # Creates jeanphix
+        UserSet()
         jeanphix = self.User.query(session)\
                 .by_username_or_email_address('jeanphix')
         self.assertEqual(jeanphix.email_address, 'serafinjp@gmail.com')
