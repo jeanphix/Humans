@@ -1,2 +1,2 @@
-fixture
 py-bcrypt
+git+git://github.com/jeanphix/distillery.git#distillery

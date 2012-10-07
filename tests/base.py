@@ -5,29 +5,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from fixture import DataTestCase, SQLAlchemyFixture, TrimmedNameStyle
 
-
-engine = create_engine('sqlite:////tmp/test.db', echo=False)
+engine = create_engine('sqlite://', echo=False)
 Session = sessionmaker(engine)
 Base = declarative_base()
-
-fixture = SQLAlchemyFixture(engine=engine,
-        style=TrimmedNameStyle(suffix="Data"))
+session = Session()
 
 
-class Models(object):
-    pass
-
-
-class BaseTestCase(DataTestCase, unittest.TestCase):
-    fixture = fixture
-
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        fixture.env = self
         Base.metadata.create_all(engine)
         super(BaseTestCase, self).setUp()
-        self.session = Session()
 
     def tearDown(self):
         super(BaseTestCase, self).tearDown()

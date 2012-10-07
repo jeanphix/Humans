@@ -1,40 +1,45 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from fixture import DataSet
-from fixture.dataset import SuperSet
+from distillery import lazy, Set, SQLAlchemyDistillery as Distillery
 
-from base import Base, Models, BaseTestCase
+from base import Base, BaseTestCase, session
 from humans.auth import user_factory, permission_factory, group_factory
 
 
+class UserSet(Set):
+    class __distillery__(Distillery):
+        __session__ = session
 
-class UserData(DataSet):
+        @lazy
+        def password(cls, instance, *args):
+            instance.set_password('password')
+            return instance.password
+
     class jeanphix:
         username = 'jeanphix'
         email_address = 'serafinjp@gmail.com'
-        password = 'mypassword'
 
     class admin:
         username = 'admin'
         email_address = 'admin@domain.tld'
-        password = 'password'
 
 
 class UserFactoryTest(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         cls.User = user_factory(Base)
-
-    datasets = [UserData]
+        UserSet.__distillery__.__model__ = cls.User
 
     def test_by_username_or_email_address_from_email_address(self):
-        admin = self.User.query(self.session)\
+        UserSet().admin  # Creates the admin
+        admin = self.User.query(session)\
                 .by_username_or_email_address('admin@domain.tld')
         self.assertEqual(admin.username, 'admin')
 
     def test_by_username_or_email_address_from_username(self):
-        jeanphix = self.User.query(self.session)\
+        UserSet().jeanphix  # Creates jeanphix
+        jeanphix = self.User.query(session)\
                 .by_username_or_email_address('jeanphix')
         self.assertEqual(jeanphix.email_address, 'serafinjp@gmail.com')
 
@@ -58,59 +63,69 @@ class UserFactoryTest(BaseTestCase):
         self.assertTrue(user.check_password('password'))
 
 
-class GroupData(DataSet):
+class GroupSet(Set):
+    class __distillery__(Distillery):
+        __session__ = session
+
     class admin:
         name = 'admin'
-        users = [UserData.jeanphix]
+        users = [UserSet.jeanphix]
 
 
 class GroupFactoryTest(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         cls.User = user_factory(Base)
+        UserSet.__distillery__.__model__ = cls.User
         cls.Group = group_factory(Base, cls.User)
-
-    datasets = [UserData, GroupData]
+        GroupSet.__distillery__.__model__ = cls.Group
 
     def test_has_group_name(self):
-        self.assertTrue(self.data.UserData.jeanphix.has_group('admin'))
+        users = UserSet()
+        GroupSet().admin
+        self.assertTrue(users.jeanphix.has_group('admin'))
 
     def test_has_group_name_false(self):
-        self.assertFalse(self.data.UserData.jeanphix.has_group('user'))
+        users = UserSet()
+        GroupSet().admin
+        self.assertFalse(users.jeanphix.has_group('user'))
 
 
-class PermissionData(DataSet):
-    class Meta:
-        storable_name = 'Permission'
+class PermissionSet(Set):
+    class __distillery__(Distillery):
+        __session__ = session
 
     class create_user:
         name = 'create_user'
-        users = [UserData.admin]
+        users = [UserSet.admin]
 
 
 class PermissionFactoryWithUserTest(BaseTestCase):
     @classmethod
     def setUpClass(cls):
         cls.User = user_factory(Base)
+        UserSet.__distillery__.__model__ = cls.User
         cls.Permission = permission_factory(Base,
                 user_class=cls.User)
-
-    datasets = [UserData, PermissionData]
+        PermissionSet.__distillery__.__model__ = cls.Permission
 
     def test_user_permission_list(self):
-        self.assertIn('create_user', self.data.UserData.admin.permissions_list)
+        users, permissions = UserSet(), PermissionSet()
+        self.assertIn(permissions.create_user.name,
+            users.admin.permissions_list)
 
     def test_user_has_permission_name(self):
-        self.assertTrue(self.data.UserData.admin.has_permission('create_user'))
+        users, permissions = UserSet(), PermissionSet()
+        self.assertTrue(users.admin.has_permission(
+            permissions.create_user.name))
 
     def test_user_has_permission_name_false(self):
-        self.assertFalse(self.data.UserData.admin\
-                .has_permission('create_group'))
+        users, permissions = UserSet(), PermissionSet()
+        self.assertFalse(users.admin.has_permission('create_group'))
 
 
 class PermissionFactoryWithGroup(BaseTestCase):
     pass
-
 
 
 if __name__ == '__main__':
